@@ -1,18 +1,18 @@
-# TiddlyWiki5 鼠标悬浮链接预览 - 最佳实践研究报告
+# TiddlyWiki5 Vista previa del enlace al pasar el mouse - Informe de investigacion de mejores practicas
 
-## 一、核心机制研究
+## 1. Investigacion sobre el mecanismo central.
 
-### 1.1 EventCatcher Widget (推荐方式)
+### 1.1 EventCatcher Widget (Metodos recomendados)
 
-**EventCatcher Widget** 是 TiddlyWiki v5.1.23+ 引入的高级事件处理机制，可以捕获 DOM 事件并触发 Action Widgets。
+**EventCatcher Widget** es TiddlyWiki v5.1.23+ El mecanismo avanzado de procesamiento de eventos introducido puede capturar DOM Evento y desencadenante Action Widgets。
 
-**核心优势：**
-- ✅ 纯 wikitext 实现，无需 JavaScript startup module
-- ✅ 性能优秀（事件委托机制）
-- ✅ 支持 `mouseover`、`mouseout` 等所有 DOM 事件
-- ✅ 提供丰富的变量（坐标、DOM 属性等）
+**Fortalezas centrales：**
+- ✅ puro wikitext Implementacion, no es necesaria JavaScript startup module
+- ✅ Excelente desempeno (mecanismo de delegacion de eventos）
+- ✅ Apoyo `mouseover`、`mouseout` Espera a todos DOM Eventos
+- ✅ Proporcionar variables ricas (coordenadas、DOM Propiedades, etc.）
 
-**基本语法：**
+**Gramatica basica：**
 ```wikitext
 <$eventcatcher 
   selector=".tc-tiddlylink" 
@@ -20,41 +20,41 @@
   $mouseout=<<hide-actions>>
   tag="div"
 >
-  <!-- 内容区域 -->
+  <!-- Area de contenido -->
 </$eventcatcher>
 ```
 
-**可用变量：**
-- `dom-*`: 匹配元素的所有 DOM 属性
-- `event-type`: 事件类型
-- `tv-popup-coords`: 相对坐标（用于定位弹窗）
-- `tv-popup-abs-coords`: 绝对坐标（v5.2.4+）
-- `tv-selectednode-*`: 选中节点的尺寸和位置
-- `event-fromviewport-pos*`: 事件相对于视口的位置
+**Variables disponibles：**
+- `dom-*`: Combina todos los elementos DOM Propiedades
+- `event-type`: Tipo de evento
+- `tv-popup-coords`: Coordenadas relativas (utilizadas para posicionar ventanas emergentes）
+- `tv-popup-abs-coords`: Coordenadas absolutas（v5.2.4+）
+- `tv-selectednode-*`: Seleccione el tamano y la posicion del nodo.
+- `event-fromviewport-pos*`: Posicion del evento en relacion con la ventana grafica.
 
-### 1.2 Reveal Widget + Popup 机制
+### 1.2 Reveal Widget + Popup Mecanismo
 
-**Reveal Widget** 用于条件显示内容，配合 popup 机制实现弹窗。
+**Reveal Widget** Se utiliza para mostrar contenido de forma condicional, junto con popup Mecanismo para realizar ventanas emergentes.。
 
-**popup 类型的 Reveal：**
+**popup Escribe Reveal：**
 ```wikitext
 <$reveal type="popup" state="$:/state/myPopup" position="below">
   <div class="tc-popup-keep">
-    弹窗内容
+    Contenido de la ventana emergente
   </div>
 </$reveal>
 ```
 
-**重要属性：**
-- `type="popup"`: 启用 popup 定位
-- `position`: 位置（left, above, aboveleft, aboveright, right, belowleft, belowright, below）
-- `class="tc-popup-keep"`: 点击内部不关闭（sticky popup）
-- `retain="yes"`: 隐藏时保留内容（配合 animate）
-- `animate="yes"`: 动画效果（需要 retain="yes"）
+**Atributos importantes：**
+- `type="popup"`: Habilitar popup Posicionamiento
+- `position`: Ubicacion（left, above, aboveleft, aboveright, right, belowleft, belowright, below）
+- `class="tc-popup-keep"`: Al hacer clic dentro no se cierra（sticky popup）
+- `retain="yes"`: Conservar el contenido al ocultarlo (con animate）
+- `animate="yes"`: Efectos de animacion (requeridos retain="yes"）
 
 ### 1.3 Action-Popup Widget
 
-**Action-Popup Widget** 用于触发或关闭弹窗。
+**Action-Popup Widget** Se utiliza para activar o cerrar ventanas emergentes.。
 
 ```wikitext
 <$action-popup 
@@ -64,31 +64,31 @@
 />
 ```
 
-**重要参数：**
-- `$state`: 状态 tiddler 的标题
-- `$coords`: 坐标字符串（相对或绝对）
-- `$floating`: 是否为浮动弹窗（需要显式关闭）
-- 如果 `$coords` 为空，则关闭所有弹窗
+**Parametros importantes：**
+- `$state`: Estado tiddler Titulo de
+- `$coords`: Cadena de coordenadas (relativa o absoluta)）
+- `$floating`: Si se trata de una ventana emergente flotante (debe cerrarse explicitamente)）
+- Si `$coords` Si esta vacio, cierre todas las ventanas emergentes.
 
-### 1.4 坐标系统 (v5.2.4+)
+### 1.4 Sistema de coordenadas (v5.2.4+)
 
-**相对坐标格式：** `(left,top,right,bottom)`
-- 相对于触发元素的边界框
+**Formato de coordenadas relativas：** `(left,top,right,bottom)`
+- Cuadro delimitador relativo al elemento desencadenante
 
-**绝对坐标格式：** `[(left,top,width,height)]`
-- 相对于视口的绝对位置
+**Formato de coordenadas absolutas：** `[(left,top,width,height)]`
+- Posicion absoluta relativa a la ventana grafica
 
 ---
 
-## 二、纯 Wikitext 实现方案
+## Segundo, puro Wikitext Plan de implementacion
 
-### 方案 A: EventCatcher + Reveal Widget（推荐）
+### Planificar A: EventCatcher + Reveal Widget（Recomendar）
 
-这是**最现代、最优雅**的实现方式，完全不需要 JavaScript。
+Esto es**Lo mas moderno y elegante**El metodo de implementacion es completamente innecesario. JavaScript。
 
 #### 2.1 PageTemplate Tiddler
 
-创建 `$:/plugins/yourname/link-preview/page-template`
+Crear `$:/plugins/yourname/link-preview/page-template`
 
 ```wikitext
 title: $:/plugins/yourname/link-preview/page-template
@@ -143,16 +143,16 @@ tags: $:/tags/PageTemplate
 </$eventcatcher>
 ```
 
-**关键要点：**
-1. ✅ 使用 `$:/tags/PageTemplate` 标签在页面级别包裹所有内容
-2. ✅ EventCatcher 捕获所有 `.tc-tiddlylink` 的鼠标事件
-3. ✅ `dom-data-tiddler-title` 获取链接指向的 tiddler 标题
-4. ✅ 使用 state tiddler 存储当前预览的 tiddler
-5. ✅ Reveal widget 在合适位置显示弹窗
+**Conclusiones clave：**
+1. ✅ uso `$:/tags/PageTemplate` Las etiquetas envuelven todo el contenido a nivel de pagina.
+2. ✅ EventCatcher Captura todo `.tc-tiddlylink` Eventos del mouse
+3. ✅ `dom-data-tiddler-title` Obtenga el enlace que apunta a tiddler Titulo
+4. ✅ uso state tiddler Almacene la vista previa actual tiddler
+5. ✅ Reveal widget Muestre ventanas emergentes en ubicaciones apropiadas
 
-#### 2.2 预览模板 Tiddler
+#### 2.2 Plantilla de vista previa Tiddler
 
-创建 `$:/plugins/yourname/link-preview/template`
+Crear `$:/plugins/yourname/link-preview/template`
 
 ```wikitext
 title: $:/plugins/yourname/link-preview/template
@@ -189,9 +189,9 @@ type: text/vnd.tiddlywiki
 </div>
 ```
 
-#### 2.3 样式 Tiddler
+#### 2.3 estilo Tiddler
 
-创建 `$:/plugins/yourname/link-preview/styles`
+Crear `$:/plugins/yourname/link-preview/styles`
 
 ```css
 title: $:/plugins/yourname/link-preview/styles
@@ -199,12 +199,12 @@ tags: $:/tags/Stylesheet
 type: text/css
 
 .link-preview-catcher {
-  /* EventCatcher 容器不影响布局 */
+  /* EventCatcher Los contenedores no afectan el diseno. */
   position: relative;
 }
 
 .link-preview-popup {
-  /* 弹窗基础样式 */
+  /* Estilo basico de la ventana emergente. */
   z-index: 10000;
   max-width: 600px;
   min-width: 300px;
@@ -212,7 +212,7 @@ type: text/css
 }
 
 .link-preview-container {
-  /* 毛玻璃效果 */
+  /* Efecto vidrio esmerilado */
   backdrop-filter: blur(10px) saturate(180%);
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -223,7 +223,7 @@ type: text/css
   overflow-y: auto;
 }
 
-/* 暗色主题适配 */
+/* Adaptacion del tema oscuro. */
 html[data-theme="dark"] .link-preview-container {
   background: rgba(40, 40, 40, 0.85);
   border-color: rgba(255, 255, 255, 0.1);
@@ -248,7 +248,7 @@ html[data-theme="dark"] .preview-meta {
 .preview-content {
   margin: 12px 0;
   line-height: 1.6;
-  /* 限制内容显示行数 */
+  /* Limite el numero de lineas de contenido mostradas */
   display: -webkit-box;
   -webkit-line-clamp: 10;
   -webkit-box-orient: vertical;
@@ -265,7 +265,7 @@ html[data-theme="dark"] .preview-tags {
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
-/* 动画效果 */
+/* efectos de animacion */
 .link-preview-popup {
   animation: preview-fade-in 0.2s ease-out;
 }
@@ -281,7 +281,7 @@ html[data-theme="dark"] .preview-tags {
   }
 }
 
-/* 滚动条美化 */
+/* Embellecimiento de la barra de desplazamiento */
 .link-preview-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -303,13 +303,13 @@ html[data-theme="dark"] .preview-tags {
 
 ---
 
-## 三、需要 JS 时的 .tid + .meta 实现方式
+## 3. Necesidad JS oportuno .tid + .meta Metodo de implementacion
 
-如果确实需要 JavaScript（比如需要延迟、防抖等高级功能），推荐使用 `.ts` 文件 + `.ts.meta` 的方式。
+Si es necesario JavaScript（Por ejemplo, si necesita funciones avanzadas como retardo y antivibracion), se recomienda utilizar `.ts` Archivo + `.ts.meta` manera。
 
-### 3.1 TypeScript 模块文件
+### 3.1 TypeScript Archivos de modulo
 
-创建 `link-hover.ts`
+Crear `link-hover.ts`
 
 ```typescript
 /*\
@@ -327,29 +327,29 @@ export const synchronous = true;
 
 export function startup() {
   let timeout: number | null = null;
-  const delay = 500; // 500ms 延迟
+  const delay = 500; // 500ms Retraso
   
-  // 监听所有链接的鼠标事件
+  // Escuche los eventos del mouse para todos los enlaces.
   document.addEventListener('mouseover', (event) => {
     const target = event.target as HTMLElement;
     const link = target.closest('.tc-tiddlylink');
     
     if (!link) return;
     
-    // 清除之前的定时器
+    // Borrar el temporizador anterior
     if (timeout) {
       clearTimeout(timeout);
     }
     
-    // 延迟显示
+    // Visualizacion retrasada
     timeout = window.setTimeout(() => {
       const title = link.getAttribute('data-tiddler-title');
       if (!title) return;
       
-      // 设置状态
+      // Establecer estado
       $tw.wiki.setText('$:/state/link-preview/current', 'text', null, title);
       
-      // 触发 popup
+      // Gatillo popup
       const rect = link.getBoundingClientRect();
       const coords = `[(${rect.left},${rect.bottom},${rect.width},0)]`;
       $tw.wiki.setText('$:/state/link-preview/popup', 'text', null, coords);
@@ -362,13 +362,13 @@ export function startup() {
     
     if (!link) return;
     
-    // 清除定时器
+    // Borrar temporizador
     if (timeout) {
       clearTimeout(timeout);
       timeout = null;
     }
     
-    // 延迟关闭
+    // Cierre retrasado
     setTimeout(() => {
       const popup = document.querySelector('.link-preview-popup:hover');
       if (!popup) {
@@ -379,9 +379,9 @@ export function startup() {
 }
 ```
 
-### 3.2 Meta 文件
+### 3.2 Meta Archivo
 
-创建 `link-hover.ts.meta`
+Crear `link-hover.ts.meta`
 
 ```
 title: $:/plugins/yourname/link-preview/link-hover.ts
@@ -391,97 +391,97 @@ module-type: startup
 
 ---
 
-## 四、对比分析
+## 4. Analisis comparativo
 
-### 4.1 纯 Wikitext 方案
+### 4.1 puro Wikitext Planificar
 
-**优点：**
-- ✅ 无需编写 JavaScript
-- ✅ 易于维护和调试
-- ✅ 完全使用 TiddlyWiki 原生机制
-- ✅ 性能好（事件委托）
-- ✅ 兼容性好
+**Ventajas：**
+- ✅ No se requiere escritura JavaScript
+- ✅ Facil de mantener y depurar
+- ✅ Uso completo TiddlyWiki Mecanismo nativo
+- ✅ Buen desempeno (delegacion de eventos）
+- ✅ Buena compatibilidad
 
-**缺点：**
-- ⚠️ 无法实现延迟显示（立即触发）
-- ⚠️ 无法实现防抖
-- ⚠️ 无法实现复杂的鼠标移动逻辑
+**Desventajas：**
+- ⚠️ No se puede lograr la visualizacion retrasada (activacion inmediata)）
+- ⚠️ No se puede lograr la funcion antivibracion.
+- ⚠️ No se puede implementar una logica compleja de movimiento del mouse
 
-**适用场景：**
-- 简单的悬浮预览需求
-- 不需要延迟和复杂交互
-- 希望保持纯 wikitext 的插件
+**Escenarios aplicables：**
+- Requisitos simples de vista previa flotante
+- No se requieren demoras ni interacciones complejas
+- Quieres mantenerte puro wikitext Complementos
 
-### 4.2 JavaScript 方案
+### 4.2 JavaScript Planificar
 
-**优点：**
-- ✅ 可以实现延迟显示
-- ✅ 可以实现防抖/节流
-- ✅ 可以实现复杂的交互逻辑
-- ✅ 更细粒度的控制
+**Ventajas：**
+- ✅ Se puede lograr una visualizacion retrasada
+- ✅ Se puede lograr antivibracion/Acelerador
+- ✅ Se puede implementar una logica de interaccion compleja
+- ✅ Control mas detallado
 
-**缺点：**
-- ⚠️ 需要编写和维护 JS 代码
-- ⚠️ 可能有性能问题（需要优化）
-- ⚠️ 调试相对复杂
+**Desventajas：**
+- ⚠️ Requiere redaccion y mantenimiento. JS 代码
+- ⚠️ Puede haber problemas de rendimiento (necesita optimizacion)）
+- ⚠️ La depuracion es relativamente compleja
 
-**适用场景：**
-- 需要延迟显示避免误触
-- 需要复杂的鼠标交互逻辑
-- 对用户体验要求高
-
----
-
-## 五、推荐的最终方案
-
-### 方案选择建议：
-
-1. **简单场景（推荐）**: 使用 **纯 Wikitext + EventCatcher** 方案
-   - 实现简单，维护容易
-   - 性能优秀
-   - 符合 TiddlyWiki 哲学
-
-2. **复杂场景**: 使用 **混合方案**
-   - 基础结构用 wikitext（PageTemplate + Reveal）
-   - 事件处理用 TypeScript（延迟、防抖）
-   - 渲染模板用 wikitext
-
-### 最佳实践总结：
-
-#### ✅ 推荐做法：
-
-1. 使用 `$:/tags/PageTemplate` 在页面级包裹 EventCatcher
-2. 使用 `EventCatcher Widget` 处理鼠标事件
-3. 使用 `Reveal Widget` + `type="popup"` 显示弹窗
-4. 使用 state tiddler 管理状态
-5. 使用 CSS `backdrop-filter` 实现毛玻璃效果
-6. 使用 `tc-popup-keep` class 让弹窗在点击内部时不关闭
-
-#### ❌ 避免做法：
-
-1. 不要全局修改核心 link widget
-2. 不要使用 `$:/tags/RawMarkup` 注入全局 JS
-3. 不要在每个链接上绑定独立的事件监听器
-4. 不要使用 `.js` 文件（使用 `.ts` 更好）
-5. 不要忘记处理暗色主题
+**Escenarios aplicables：**
+- La visualizacion debe retrasarse para evitar toques accidentales
+- Requiere una logica compleja de interaccion con el mouse
+- Altos requisitos en cuanto a la experiencia del usuario.
 
 ---
 
-## 六、完整的插件结构
+## 5. Plan final recomendado
+
+### Sugerencias sobre la seleccion del plan.：
+
+1. **Escenario simple (recomendado）**: uso **puro Wikitext + EventCatcher** Planificar
+   - Sencillo de implementar y facil de mantener
+   - Excelente desempeno
+   - Cumplir con TiddlyWiki Filosofia
+
+2. **Escenas complejas**: uso **Solucion hibrida**
+   - Para infraestructura wikitext（PageTemplate + Reveal）
+   - Para procesamiento de eventos TypeScript（Retraso, anti-vibracion）
+   - Para renderizar plantillas wikitext
+
+### Resumen de mejores practicas：
+
+#### ✅ Practicas recomendadas：
+
+1. uso `$:/tags/PageTemplate` Ajustar a nivel de pagina EventCatcher
+2. uso `EventCatcher Widget` Manejo de eventos del mouse
+3. uso `Reveal Widget` + `type="popup"` Mostrar ventana emergente
+4. uso state tiddler Estado de gestion
+5. uso CSS `backdrop-filter` Lograr el efecto de vidrio esmerilado
+6. uso `tc-popup-keep` class Deja que la ventana emergente no se cierre al hacer clic dentro
+
+#### ❌ Evita practicas：
+
+1. No modifiques el nucleo globalmente link widget
+2. No usar `$:/tags/RawMarkup` Inyectar globalmente JS
+3. No vincule detectores de eventos independientes a cada enlace.
+4. No usar `.js` Documentacion (usando `.ts` Mejor）
+5. No olvides tratar los temas oscuros.
+
+---
+
+## 6. Estructura completa del complemento
 
 ```
 $:/plugins/yourname/link-preview/
-├── plugin.info                 # 插件元信息
+├── plugin.info                 # Metainformacion del complemento
 ├── page-template.tid          # PageTemplate (EventCatcher)
-├── preview-template.tid       # 预览内容模板
-├── styles.tid                 # 样式（毛玻璃效果）
-├── config.tid                 # 配置界面（可选）
-├── readme.tid                 # 说明文档
-└── (可选) link-hover.ts       # JS 模块（如需延迟等功能）
-    └── link-hover.ts.meta     # Meta 文件
+├── preview-template.tid       # Vista previa de plantillas de contenido
+├── styles.tid                 # Estilo (efecto vidrio esmerilado）
+├── config.tid                 # Interfaz de configuracion (opcional）
+├── readme.tid                 # Documentacion
+└── (Opcional) link-hover.ts       # JS Modulo (si necesita retraso y otras funciones）
+    └── link-hover.ts.meta     # Meta Archivo
 ```
 
-### plugin.info 示例：
+### plugin.info Ejemplo：
 
 ```json
 {
@@ -497,32 +497,32 @@ $:/plugins/yourname/link-preview/
 
 ---
 
-## 七、进一步优化建议
+## 7. Sugerencias para una mayor optimizacion
 
-### 7.1 性能优化
+### 7.1 Optimizacion del rendimiento
 
-1. **内容截断**: 在模板中限制预览内容长度
-2. **懒加载**: 只在需要时加载完整内容
-3. **缓存**: 使用 state tiddler 缓存预览内容
+1. **Truncamiento de contenido**: Limite la longitud del contenido de la vista previa en las plantillas
+2. **Carga diferida**: Cargue el contenido completo solo cuando sea necesario
+3. **Almacenamiento en cache**: uso state tiddler Contenido de vista previa de cache
 
-### 7.2 用户体验
+### 7.2 Experiencia de usuario
 
-1. **渐变动画**: 使用 CSS animation 平滑显示
-2. **位置智能调整**: 根据视口边界调整弹窗位置
-3. **快捷键**: 支持 ESC 键关闭预览
-4. **可配置**: 提供配置选项（延迟时间、样式等）
+1. **Animacion degradada**: uso CSS animation Visualizacion fluida
+2. **Ajuste de ubicacion inteligente**: Ajuste la posicion de la ventana emergente de acuerdo con el limite de la ventana grafica.
+3. **Teclas de acceso directo**: Apoyo ESC tecla para cerrar la vista previa
+4. **Configurable**: Proporcione opciones de configuracion (tiempo de retraso, estilo, etc.)）
 
-### 7.3 可访问性
+### 7.3 Accesibilidad
 
-1. **ARIA 标签**: 添加合适的 aria 属性
-2. **键盘导航**: 支持键盘操作
-3. **屏幕阅读器**: 提供描述文本
+1. **ARIA Etiquetas**: Anade lo apropiado aria Propiedades
+2. **Navegacion por teclado**: Admite operacion de teclado
+3. **Lectores de pantalla**: Proporcionar texto descriptivo.
 
 ---
 
-## 八、参考资源
+## 8. Recursos de referencia
 
-### 官方文档：
+### Documentos oficiales：
 
 - [EventCatcherWidget](https://tiddlywiki.com/static/EventCatcherWidget.html)
 - [RevealWidget](https://tiddlywiki.com/static/RevealWidget.html)
@@ -531,15 +531,15 @@ $:/plugins/yourname/link-preview/
 - [PopupMechanism](https://tiddlywiki.com/static/PopupMechanism.html)
 - [SystemTags](https://tiddlywiki.com/static/SystemTags.html)
 
-### 社区讨论：
+### Discusion comunitaria：
 
 - [Talk TiddlyWiki - Preview Plugin](https://talk.tiddlywiki.org/)
 - [GitHub - tobibeer/tw5-preview](https://github.com/tobibeer/tw5-preview)
 
 ---
 
-## 九、结论
+## 9. Conclusion
 
-对于现代 TiddlyWiki5 插件开发，**推荐使用纯 Wikitext + EventCatcher 方案**，这是最符合 TiddlyWiki 哲学的实现方式。只有在确实需要延迟、防抖等高级功能时，才考虑添加 TypeScript 模块。
+Para los tiempos modernos TiddlyWiki5 Desarrollo de complementos，**Se recomienda utilizar puro Wikitext + EventCatcher Planificar**，Este es el mas apropiado TiddlyWiki Como se realiza la filosofia. Solo considere agregar funciones avanzadas como retardo y antivibracion si realmente las necesita. TypeScript Modulos。
 
-通过合理使用 EventCatcher、Reveal Widget 和 Action Widgets，可以实现一个功能完整、性能优秀、易于维护的链接预览插件，而无需编写任何 JavaScript 代码。
+Por uso legitimo EventCatcher、Reveal Widget y Action Widgets，Se puede implementar un complemento de vista previa de enlaces con funciones completas, excelente rendimiento y facil mantenimiento sin escribir ningun JavaScript 代码。
